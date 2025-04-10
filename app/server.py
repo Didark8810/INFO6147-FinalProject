@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 from torchvision import transforms
 from models.gradcam import generate_gradcam
-from classifier import load_model_and_labels
+from models.classifier import load_model_and_labels
 import numpy as np
 import base64
 import matplotlib.pyplot as plt
@@ -27,8 +27,8 @@ app.add_middleware(
 )
 
 # Carga del modelo entrenado
-model_path = "models/efficientnet_finetuned.pth"
-label_path = "models/class_labels.txt"
+model_path = "models_trained/efficientnet_finetuned.pth"
+label_path = "models_trained/class_labels.txt"
 model, class_names = load_model_and_labels(model_path, label_path)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)

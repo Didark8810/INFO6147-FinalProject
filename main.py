@@ -1,6 +1,7 @@
 from models.classifier import FruitClassifier
 from utils.data_utils import get_data_loaders  
 import argparse
+import os
 
 def main():
     parser = argparse.ArgumentParser()
@@ -25,18 +26,26 @@ def main():
     val_loader = loaders["val"]
     test_loader = loaders["test"]
 
+    # Obtener clases desde los datos
+    class_names = train_loader.dataset.dataset.classes
+
+    print(f"Clases encontradas: {class_names}")
+    print(f"Total de clases: {len(class_names)}")
+    print(f"Total de imágenes de entrenamiento: {len(train_loader.dataset)}")
+    print(f"Total de imágenes de validación: {len(val_loader.dataset)}")
+
     # Instancia del clasificador
-    classifier = FruitClassifier(num_classes=2)
+    classifier = FruitClassifier(num_classes=len(class_names))
 
     if args.train:
         print("🔧 Entrenando modelo...")
         classifier.train_model(train_loader, val_loader, epochs=args.epochs, lr=args.lr)
-        classifier.save_model(args.model_path)
+        classifier.save_model(args.model_path, class_names=class_names)  
+
     if args.serve:
         from app.server import start_server
         print("🚀 Iniciando servidor web...")
         start_server()
-
 
     elif args.evaluate:
         print("📊 Evaluando modelo...")

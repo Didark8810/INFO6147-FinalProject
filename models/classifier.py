@@ -4,8 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights
-
-
+import os
 
 class FruitClassifier:
     def __init__(self, num_classes=2, model_name='efficientnet-b0', pretrained=True, device=None):
@@ -27,7 +26,6 @@ class FruitClassifier:
         """ Reemplaza la capa final para ajustar el número de clases deseado. """
         num_features = self.model.classifier[1].in_features
         self.model.classifier[1] = nn.Linear(num_features, num_classes)
-
 
     def train_model(self, train_loader, val_loader=None, epochs=10, lr=1e-4):
         """
@@ -67,7 +65,6 @@ class FruitClassifier:
 
             print(f"Epoch {epoch+1}/{epochs} | Loss: {epoch_loss:.4f} | Accuracy: {epoch_acc:.2f}%")
 
-            # Evaluación en el conjunto de validación si se proporciona
             if val_loader:
                 self.evaluate_model(val_loader)
     
@@ -116,12 +113,55 @@ class FruitClassifier:
             _, predicted = torch.max(outputs, 1)
         return predicted.item(), probabilities.squeeze().cpu().numpy()
     
-    def save_model(self, path):
-        """ Guarda los pesos del modelo en el archivo especificado. """
+    def save_model(self, path, class_names=None):
+        """
+        Guarda los pesos del modelo y opcionalmente las etiquetas de clase.
+        
+        Args:
+            path (str): Ruta del archivo para guardar los pesos (.pth).
+            class_names (list, opcional): Lista de etiquetas de clase. Si se proporciona,
+                                        se guardará como class_labels.txt junto al modelo.
+        """
+        # Guardar pesos
         torch.save(self.model.state_dict(), path)
+        
+        # Guardar etiquetas si se proporcionan
+        if class_names:
+            label_path = os.path.join(os.path.dirname(path), "class_labels.txt")
+            with open(label_path, "w") as f:
+                for label in class_names:
+                    f.write(label + "\n")
 
     def load_model(self, path):
         """ Carga los pesos del modelo desde el archivo especificado. """
         self.model.load_state_dict(torch.load(path, map_location=self.device))
         self.model.to(self.device)
         self.model.eval()
+
+
+# ⬇️ Esta es la función que se usa desde server.py
+def load_model_and_labels(model_path, label_path, num_classes=6, device=None):
+    """
+    Carga un modelo entrenado y sus etiquetas desde archivos.
+    
+    Args:
+        model_path (str): Ruta al archivo .pth con los pesos del modelo.
+        label_path (str): Ruta al archivo .txt con los nombres de clase.
+        num_classes (int): Número de clases del modelo.
+        device: Dispositivo (cpu o cuda).
+    
+    Returns:
+        model: Modelo listo para inferencia.
+        class_names (list): Lista de nombres de clase.
+    """
+    device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Inicializa el modelo
+    classifier = FruitClassifier(num_classes=num_classes, pretrained=False, device=device)
+    classifier.load_model(model_path)
+
+    # Carga las etiquetas
+    with open(label_path, "r") as f:
+        class_names = [line.strip() for line in f.readlines()]
+
+    return classifier.model, class_names
