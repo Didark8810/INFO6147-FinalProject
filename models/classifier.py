@@ -134,7 +134,7 @@ class FruitClassifier:
 
     def load_model(self, path):
         """ Carga los pesos del modelo desde el archivo especificado. """
-        self.model.load_state_dict(torch.load(path, map_location=self.device))
+        self.model.load_state_dict(torch.load(path, map_location=self.device, weights_only=True))
         self.model.to(self.device)
         self.model.eval()
 
@@ -159,7 +159,7 @@ def load_model_and_labels(model_path, label_path, num_classes=6, device=None):
     # Inicializa el modelo
     classifier = FruitClassifier(num_classes=num_classes, pretrained=False, device=device)
     classifier.load_model(model_path)
-
+    print(f"Modelo cargado desde {model_path}")
     # Carga las etiquetas
     with open(label_path, "r") as f:
         class_names = [line.strip() for line in f.readlines()]

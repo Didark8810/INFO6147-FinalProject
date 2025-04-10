@@ -27,6 +27,7 @@ app.add_middleware(
 )
 
 # Carga del modelo entrenado
+print("Cargando modelo y etiquetas...")
 model_path = "models_trained/efficientnet_finetuned.pth"
 label_path = "models_trained/class_labels.txt"
 model, class_names = load_model_and_labels(model_path, label_path)
@@ -38,8 +39,7 @@ model.eval()
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                         std=[0.229, 0.224, 0.225])
+    transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
 ])
 
 def pil_to_base64(pil_img):
