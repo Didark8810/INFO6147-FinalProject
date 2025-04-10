@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Fruit Classifier + GradCAM</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 30px;
+        }
+
+        img {
+            max-width: 300px;
+            margin: 10px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 5px #aaa;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🍎 Fruit Classifier + GradCAM 🍌</h1>
+    <input type="file" id="imageInput" accept="image/*"><br><br>
+    <button onclick="uploadImage()">Clasificar Imagen</button>
+
+    <div id="result"></div>
+
+    <script>
+        async function uploadImage() {
+            const input = document.getElementById('imageInput');
+            const file = input.files[0];
+            if (!file) return alert("Selecciona una imagen");
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const response = await fetch("http://localhost:8000/predict", {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await response.json();
+
+            document.getElementById("result").innerHTML = `
+                <h2>Resultado</h2>
+                <p><strong>Clase:</strong> ${result.class}</p>
+                <p><strong>Confianza:</strong> ${result.confidence}%</p>
+                <div class="container">
+                    <div class="card">
+                        <p><strong>Imagen Original</strong></p>
+                        <img src="data:image/jpeg;base64,${result.original_image}">
+                    </div>
+                    <div class="card">
+                        <p><strong>GradCAM</strong></p>
+                        <img src="data:image/jpeg;base64,${result.gradcam_image}">
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+
+</html>

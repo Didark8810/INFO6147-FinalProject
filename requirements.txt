@@ -1,0 +1,13 @@
+torch>=2.0.0
+torchvision>=0.15.0
+tqdm
+matplotlib
+seaborn
+numpy
+opencv-python
+Pillow
+scikit-learn
+fastapi
+uvicorn[standard]
+python-multipart
+jinja2
