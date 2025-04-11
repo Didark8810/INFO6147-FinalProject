@@ -11,10 +11,10 @@ model.load_state_dict(state_dict)
 model.eval()
 
 # Cargar imagen
-im = Image.open("filesJupyter/uno/f6.jpg")
+im = Image.open("filesJupyter/uno/f7.jpg")
 
 # Detección
 scores, boxes = detect(im, model, transform)
-
+print(boxes)
 # Visualización
 plot_results(im, scores, boxes)

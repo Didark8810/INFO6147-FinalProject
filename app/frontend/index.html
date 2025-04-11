@@ -72,6 +72,40 @@
             `;
         }
     </script>
+
+    <input type="file" id="imageInput" accept="image/*"><br><br>
+    <button onclick="uploadImageD()">Detectar Imagen</button>
+
+    <div id="resultDetect"></div>
+
+    <script>
+        async function uploadImageD() {
+            const input = document.getElementById('imageInput');
+            const file = input.files[0];
+            if (!file) return alert("Selecciona una imagen");
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const response = await fetch("http://localhost:8000/detect", {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await response.json();
+
+            console.log(result);
+
+            document.getElementById("resultDetect").innerHTML = `
+                <h2>Resultado Detección</h2>
+                <div class="container">
+                    <div class="card">
+                            <img src="data:detection_image/jpeg;base64,${result.detection_image}">
+                        </div>
+                </div>
+            `;
+        }
+    </script>
 </body>
 
 </html>

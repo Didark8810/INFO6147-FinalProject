@@ -1,6 +1,7 @@
 # server.py
 
 import io
+from models.detr import DETRdemo
 import torch
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
@@ -13,7 +14,11 @@ import numpy as np
 import base64
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+from utils.coco_classes import CLASSES
+from utils.detection_utils import detect, plot_results_to_image
 import uvicorn
+
+from utils.detection_utils import detect, plot_results, transform as tdTales
 
 app = FastAPI()
 
@@ -34,6 +39,13 @@ model, class_names = load_model_and_labels(model_path, label_path)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 model.eval()
+
+# Carga del modelo de detección
+modelDetect = DETRdemo(num_classes=91)
+state_dict = torch.hub.load_state_dict_from_url('https://dl.fbaipublicfiles.com/detr/detr_demo-da2a99e9.pth',map_location='cpu', check_hash=True)
+modelDetect.load_state_dict(state_dict)
+modelDetect.to(device)
+modelDetect.eval()
 
 # Transformaciones para las imágenes recibidas
 transform = transforms.Compose([
@@ -81,6 +93,35 @@ async def predict(file: UploadFile = File(...)):
         "original_image": original_b64,
         "gradcam_image": heatmap_b64
     })
+
+@app.post("/detect")
+async def detect_banana(file: UploadFile = File(...)):
+    image_data = await file.read()
+    image = Image.open(io.BytesIO(image_data)).convert("RGB")
+
+
+    
+    scores1, boxes1 = detect(image, modelDetect, tdTales)
+
+    print(f"boxes tales: {boxes1}")
+
+    # Generar imagen con resultados visuales
+    detection_img_buf = plot_results_to_image(image, scores1, boxes1)
+    img_base64 = base64.b64encode(detection_img_buf.getvalue()).decode()
+
+    result = []
+    for score, box in zip(scores1, boxes1):
+        label = CLASSES[score.argmax()]
+        result.append({
+            "label": label,
+            "score": float(score.max()),
+            "box": [float(b) for b in box]
+        })
+
+    return {
+        "detections": result,
+        "detection_image": img_base64  # <- aquí va la imagen visualizada como base64
+    }
 
 # Función para arrancar el servidor desde main.py
 def start_server():
