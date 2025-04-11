@@ -140,7 +140,7 @@ class FruitClassifier:
 
 
 # ⬇️ Esta es la función que se usa desde server.py
-def load_model_and_labels(model_path, label_path, num_classes=2, device=None):
+def load_model_and_labels(model_path, label_path, num_classes=6, device=None):
     """
     Carga un modelo entrenado y sus etiquetas desde archivos.
     
