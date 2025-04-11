@@ -108,6 +108,7 @@ async def detect_banana(file: UploadFile = File(...)):
     # Generar imagen con resultados visuales
     detection_img_buf = plot_results_to_image(image, scores1, boxes1)
     img_base64 = base64.b64encode(detection_img_buf.getvalue()).decode()
+    original_b64 = pil_to_base64(image.resize((224, 224)))
 
     result = []
     for score, box in zip(scores1, boxes1):
@@ -118,10 +119,11 @@ async def detect_banana(file: UploadFile = File(...)):
             "box": [float(b) for b in box]
         })
 
-    return {
+    return  JSONResponse({
         "detections": result,
-        "detection_image": img_base64  # <- aquí va la imagen visualizada como base64
-    }
+        "detection_image": img_base64,  # <- aquí va la imagen visualizada como base64
+        "original_image": original_b64,
+    })
 
 # Función para arrancar el servidor desde main.py
 def start_server():

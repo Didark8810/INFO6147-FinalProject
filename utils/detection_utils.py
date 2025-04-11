@@ -97,8 +97,8 @@ def plot_results_to_image(pil_img, prob, boxes, save_path="outputs/detection_res
     ax.axis('off')
 
     # Guardar imagen localmente
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)  # Asegura que la carpeta exista
-    plt.savefig(save_path, format="jpeg", bbox_inches="tight")  # ← ESTA LÍNEA GUARDA EN DISCO
+    # os.makedirs(os.path.dirname(save_path), exist_ok=True)  # Asegura que la carpeta exista
+    # plt.savefig(save_path, format="jpeg", bbox_inches="tight")  # ← ESTA LÍNEA GUARDA EN DISCO
 
     # Convertir a imagen en memoria
     buf = io.BytesIO()
