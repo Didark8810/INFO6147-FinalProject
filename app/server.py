@@ -84,4 +84,6 @@ async def predict(file: UploadFile = File(...)):
 
 # Función para arrancar el servidor desde main.py
 def start_server():
-    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("app.server:app", host="0.0.0.0", port=8000)
+
+
