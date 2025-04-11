@@ -1,2 +1,6 @@
-test
-train
+freshapples
+freshbanana
+freshoranges
+rottenapples
+rottenbanana
+rottenoranges

@@ -15,7 +15,7 @@ def main():
     args = parser.parse_args()
 
     # Configuración
-    data_dir = "./data"
+    data_dir = "./data/train"
     batch_size = 32
     img_size = 224
 
