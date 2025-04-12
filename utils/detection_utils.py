@@ -3,11 +3,9 @@ import torchvision.transforms as T
 import matplotlib.pyplot as plt
 import math
 from utils.coco_classes import CLASSES
-import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import io
 import os
-
 
 COLORS = [[0.000, 0.447, 0.741], [0.850, 0.325, 0.098], [0.929, 0.694, 0.125],
           [0.494, 0.184, 0.556], [0.466, 0.674, 0.188], [0.301, 0.745, 0.933]]
@@ -71,7 +69,6 @@ def plot_results(pil_img, prob, boxes):
     plt.axis('off')
     plt.show()
 
-
 def plot_results_to_image(pil_img, prob, boxes, save_path="outputs/detection_result.jpg"):
     fig, ax = plt.subplots(figsize=(10, 8))
     ax.imshow(pil_img)
@@ -96,11 +93,6 @@ def plot_results_to_image(pil_img, prob, boxes, save_path="outputs/detection_res
     ax.plot(center_x, center_y, marker='o', color='white', markersize=10)
     ax.axis('off')
 
-    # Guardar imagen localmente
-    # os.makedirs(os.path.dirname(save_path), exist_ok=True)  # Asegura que la carpeta exista
-    # plt.savefig(save_path, format="jpeg", bbox_inches="tight")  # ← ESTA LÍNEA GUARDA EN DISCO
-
-    # Convertir a imagen en memoria
     buf = io.BytesIO()
     plt.savefig(buf, format="jpeg", bbox_inches="tight")
     plt.close(fig)

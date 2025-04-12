@@ -1,30 +1,25 @@
-# server.py
-
 import io
-from models.detr import DETRdemo
+import base64
 import torch
+import numpy as np
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 from torchvision import transforms
-from models.gradcam import generate_gradcam
-from models.classifier import load_model_and_labels
-import numpy as np
-import base64
-import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-from utils.coco_classes import CLASSES
-from utils.detection_utils import detect, plot_results_to_image
-import uvicorn
-from models.classifierCNNModel import FruitClassifierCNNModel
-
-from utils.detection_utils import detect, plot_results, transform as tdTales
 import torch.nn.functional as F
+import uvicorn
+
+from models.detr import DETRdemo
+from models.classifier import load_model_and_labels
+from models.gradcam import generate_gradcam
+from models.classifierCNNModel import FruitClassifierCNNModel
+from utils.coco_classes import CLASSES
+from utils.detection_utils import detect, plot_results_to_image, transform as tdTales
 
 app = FastAPI()
 
-# Permite acceso desde cualquier origen (útil para pruebas móviles o frontend web)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -33,48 +28,42 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Carga del modelo entrenado
-print("Cargando modelo y etiquetas...")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 model_path = "models_trained/efficientnet_finetuned.pth"
 label_path = "models_trained/class_labels.txt"
 model, class_names = load_model_and_labels(model_path, label_path)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 model.eval()
 
-# Carga del modelo de detección
 modelDetect = DETRdemo(num_classes=91)
-state_dict = torch.hub.load_state_dict_from_url('https://dl.fbaipublicfiles.com/detr/detr_demo-da2a99e9.pth',map_location='cpu', check_hash=True)
+state_dict = torch.hub.load_state_dict_from_url(
+    'https://dl.fbaipublicfiles.com/detr/detr_demo-da2a99e9.pth',
+    map_location='cpu', check_hash=True)
 modelDetect.load_state_dict(state_dict)
 modelDetect.to(device)
 modelDetect.eval()
 
-
-# Carga del modelo basico
 class_namesBasic = ['freshapples', 'freshbanana', 'freshoranges', 'rottenapples', 'rottenbanana', 'rottenoranges']
-
-
 model_pathBasic = "models_trained/modelBasic.pth"
-modelBasic = FruitClassifierCNNModel(num_classes=len(class_names))
+modelBasic = FruitClassifierCNNModel(num_classes=len(class_namesBasic))
 modelBasic.load_state_dict(torch.load(model_pathBasic, map_location=device))
 modelBasic.to(device)
 modelBasic.eval()
 
-transformBasic = transforms.Compose([
-    transforms.Resize((128, 128)),
-    transforms.ToTensor(),
-    transforms.Normalize([0.5]*3, [0.5]*3)
-])
-
-# Transformaciones para las imágenes recibidas
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+
+transformBasic = transforms.Compose([
+    transforms.Resize((128, 128)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.5] * 3, [0.5] * 3)
 ])
 
 def pil_to_base64(pil_img):
-    """Convierte una imagen PIL a base64 para mostrar en HTML."""
     buffered = io.BytesIO()
     pil_img.save(buffered, format="JPEG")
     return base64.b64encode(buffered.getvalue()).decode()
@@ -92,17 +81,12 @@ async def predict(file: UploadFile = File(...)):
         pred_class = class_names[pred_idx]
         confidence = probs[pred_idx].item()
 
-    # Generar gradCAM
     heatmap_np = generate_gradcam(model, input_tensor, target_layer="features", class_idx=pred_idx)
 
-    # Superponer gradCAM sobre imagen original
-    heatmap_img = Image.fromarray(np.uint8(heatmap_np * 255))
-    image_np = np.array(image.resize((224, 224)))
     heatmap_color = cm.jet(heatmap_np)[..., :3] * 255
     heatmap_color = heatmap_color.astype(np.uint8)
-    overlay = Image.blend(Image.fromarray(image_np), Image.fromarray(heatmap_color), alpha=0.5)
+    overlay = Image.blend(Image.fromarray(np.array(image.resize((224, 224)))), Image.fromarray(heatmap_color), alpha=0.5)
 
-    # Convertimos a base64 para enviar al navegador
     original_b64 = pil_to_base64(image.resize((224, 224)))
     heatmap_b64 = pil_to_base64(overlay)
 
@@ -118,13 +102,7 @@ async def detect_banana(file: UploadFile = File(...)):
     image_data = await file.read()
     image = Image.open(io.BytesIO(image_data)).convert("RGB")
 
-
-    
     scores1, boxes1 = detect(image, modelDetect, tdTales)
-
-    print(f"boxes tales: {boxes1}")
-
-    # Generar imagen con resultados visuales
     detection_img_buf = plot_results_to_image(image, scores1, boxes1)
     img_base64 = base64.b64encode(detection_img_buf.getvalue()).decode()
     original_b64 = pil_to_base64(image.resize((224, 224)))
@@ -138,9 +116,9 @@ async def detect_banana(file: UploadFile = File(...)):
             "box": [float(b) for b in box]
         })
 
-    return  JSONResponse({
+    return JSONResponse({
         "detections": result,
-        "detection_image": img_base64,  # <- aquí va la imagen visualizada como base64
+        "detection_image": img_base64,
         "original_image": original_b64,
     })
 
@@ -153,12 +131,7 @@ async def predictBasic(file: UploadFile = File(...)):
 
     with torch.no_grad():
         output = modelBasic(image_tensor)
-        _, predicted = torch.max(output, 1)
-        label = class_namesBasic[predicted.item()]
-
-
-        output = modelBasic(image_tensor)
-        probabilities = F.softmax(output, dim=1)  # Convertir logits a probabilidades
+        probabilities = F.softmax(output, dim=1)
         confidence, predicted = torch.max(probabilities, 1)
         label = class_namesBasic[predicted.item()]
         confidence_score = confidence.item() 
@@ -169,8 +142,5 @@ async def predictBasic(file: UploadFile = File(...)):
         "confidence": round(confidence_score * 100, 2),
     })
 
-# Función para arrancar el servidor desde main.py
 def start_server():
     uvicorn.run("app.server:app", host="0.0.0.0", port=8000)
-
-
