@@ -17,6 +17,7 @@ import matplotlib.cm as cm
 from utils.coco_classes import CLASSES
 from utils.detection_utils import detect, plot_results_to_image
 import uvicorn
+from models.classifierCNNModel import FruitClassifierCNNModel
 
 from utils.detection_utils import detect, plot_results, transform as tdTales
 
@@ -46,6 +47,23 @@ state_dict = torch.hub.load_state_dict_from_url('https://dl.fbaipublicfiles.com/
 modelDetect.load_state_dict(state_dict)
 modelDetect.to(device)
 modelDetect.eval()
+
+
+# Carga del modelo basico
+class_namesBasic = ['freshapples', 'freshbanana', 'freshoranges', 'rottenapples', 'rottenbanana', 'rottenoranges']
+
+
+model_pathBasic = "models_trained/modelBasic.pth"
+modelBasic = FruitClassifierCNNModel(num_classes=len(class_names))
+modelBasic.load_state_dict(torch.load(model_pathBasic, map_location=device))
+modelBasic.to(device)
+modelBasic.eval()
+
+transformBasic = transforms.Compose([
+    transforms.Resize((128, 128)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.5]*3, [0.5]*3)
+])
 
 # Transformaciones para las imágenes recibidas
 transform = transforms.Compose([
@@ -123,6 +141,22 @@ async def detect_banana(file: UploadFile = File(...)):
         "detections": result,
         "detection_image": img_base64,  # <- aquí va la imagen visualizada como base64
         "original_image": original_b64,
+    })
+
+@app.post("/predictBasic")
+async def predictBasic(file: UploadFile = File(...)):
+    contents = await file.read()
+    image = Image.open(io.BytesIO(contents)).convert("RGB")
+    image_tensor = transformBasic(image).unsqueeze(0).to(device)
+
+    with torch.no_grad():
+        output = modelBasic(image_tensor)
+        _, predicted = torch.max(output, 1)
+        label = class_namesBasic[predicted.item()]
+    #TODO agregar confidence 
+    return JSONResponse({
+        "label": label
+        
     })
 
 # Función para arrancar el servidor desde main.py

@@ -6,6 +6,7 @@ import os
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--train', action='store_true', help='Entrenar el modelo')
+    parser.add_argument('--trainBasic', action='store_true', help='Entrenar el modelo basico')
     parser.add_argument('--evaluate', action='store_true', help='Evaluar el modelo')
     parser.add_argument('--epochs', type=int, default=10, help='Número de épocas de entrenamiento')
     parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate')
@@ -41,8 +42,13 @@ def main():
         print("🔧 Entrenando modelo...")
         classifier.train_model(train_loader, val_loader, epochs=args.epochs, lr=args.lr)
         classifier.save_model(args.model_path, class_names=class_names)  
+    
+    elif args.trainBasic:
+        print("🔧 Entrenando modelo basico...")
+        #classifier.train_model(train_loader, val_loader, epochs=args.epochs, lr=args.lr)
+        #classifier.save_model(args.model_path, class_names=class_names)  
 
-    if args.serve:
+    elif args.serve:
         from app.server import start_server
         print("🚀 Iniciando servidor web...")
         start_server()
