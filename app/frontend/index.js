@@ -1,5 +1,4 @@
-function uploadImage(event) {
-    event.preventDefault();
+function uploadImage() {
     const input = document.getElementById('imageInput');
     const file = input.files[0];
     if (!file) return alert("Selecciona una imagen");
@@ -43,8 +42,7 @@ function uploadImage(event) {
         });
 }
 
-function uploadImageD(event) {
-    event.preventDefault();
+function uploadImageD() {
     const input = document.getElementById('imageInput');
     const file = input.files[0];
     if (!file) return alert("Selecciona una imagen");
@@ -171,4 +169,54 @@ function init() {
     console.log("Frontend initialized.....");
     const randomNumber = Math.floor(Math.random() * 101); // número entre 0 y 100
     console.log("Número aleatorio:", randomNumber);
+}
+
+
+function Video() {
+    const resultDiv = document.getElementById("result");
+
+    resultDiv.innerHTML = `
+        <h2 class="text-info">Visualizador de Video</h2>
+        <div class="mb-3">
+            <select class="form-select w-50 mx-auto" id="videoSelect">
+                <option value="" selected disabled>Selecciona una fruta</option>
+                <option value="apple">Apple</option>
+                <option value="banana">Banana</option>
+                <option value="orange">Orange</option>
+            </select>
+        </div>
+        <div class="d-flex justify-content-center mb-3">
+            <video id="fruitVideo" width="640" height="700" loop muted class="border rounded shadow"></video>
+        </div>
+        <div class="d-flex justify-content-center gap-3">
+            <button class="btn btn-outline-success" onclick="playVideo()">▶ Reproducir</button>
+            <button class="btn btn-outline-danger" onclick="pauseVideo()">⏸ Pausar</button>
+        </div>
+    `;
+
+    const videoSelect = document.getElementById("videoSelect");
+    const videoElement = document.getElementById("fruitVideo");
+
+    videoSelect.addEventListener("change", function () {
+        const fruit = videoSelect.value;
+        const videoPath = `video-${fruit}.mp4`;
+
+        videoElement.src = videoPath;
+        videoElement.load();
+        videoElement.play();
+    });
+}
+
+function playVideo() {
+    const video = document.getElementById("fruitVideo");
+    if (video) {
+        video.play();
+    }
+}
+
+function pauseVideo() {
+    const video = document.getElementById("fruitVideo");
+    if (video) {
+        video.pause();
+    }
 }
