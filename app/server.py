@@ -20,6 +20,7 @@ import uvicorn
 from models.classifierCNNModel import FruitClassifierCNNModel
 
 from utils.detection_utils import detect, plot_results, transform as tdTales
+import torch.nn.functional as F
 
 app = FastAPI()
 
@@ -148,15 +149,24 @@ async def predictBasic(file: UploadFile = File(...)):
     contents = await file.read()
     image = Image.open(io.BytesIO(contents)).convert("RGB")
     image_tensor = transformBasic(image).unsqueeze(0).to(device)
+    original_b64 = pil_to_base64(image.resize((224, 224)))
 
     with torch.no_grad():
         output = modelBasic(image_tensor)
         _, predicted = torch.max(output, 1)
         label = class_namesBasic[predicted.item()]
-    #TODO agregar confidence 
+
+
+        output = modelBasic(image_tensor)
+        probabilities = F.softmax(output, dim=1)  # Convertir logits a probabilidades
+        confidence, predicted = torch.max(probabilities, 1)
+        label = class_namesBasic[predicted.item()]
+        confidence_score = confidence.item() 
+    
     return JSONResponse({
-        "label": label
-        
+        "label": label,
+        "original_image": original_b64,
+        "confidence": round(confidence_score * 100, 2),
     })
 
 # Función para arrancar el servidor desde main.py
